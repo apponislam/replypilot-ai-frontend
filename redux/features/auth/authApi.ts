@@ -196,7 +196,14 @@ export const authApi = baseApi.injectEndpoints({
             }),
             providesTags: ["User"],
         }),
-
+        // 10.5. Check if email is verified
+        checkEmailVerified: builder.query<ApiResponse<null>, void>({
+            query: () => ({
+                url: "/auth/check-email-verified",
+                method: "GET",
+            }),
+            providesTags: ["User"],
+        }),
         // 11. Logout user
         logout: builder.mutation<ApiResponse<null>, void>({
             query: () => ({
@@ -308,6 +315,8 @@ export const {
     useGetMeQuery,
     useLazyGetMeQuery,
     useLogoutMutation,
+    useCheckEmailVerifiedQuery,
+    useLazyCheckEmailVerifiedQuery,
     useUpdateProfileMutation,
     useChangePasswordMutation,
     useDeleteAccountMutation,
