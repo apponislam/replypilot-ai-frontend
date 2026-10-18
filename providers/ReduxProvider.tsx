@@ -6,11 +6,21 @@ import { PersistGate } from "redux-persist/integration/react";
 import store, { persistor } from "../redux/store";
 
 export function ReduxProviders({ children }: { children: React.ReactNode }) {
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
         <Provider store={store}>
-            <PersistGate loading={null} persistor={persistor}>
-                {children}
-            </PersistGate>
+            {mounted ? (
+                <PersistGate loading={null} persistor={persistor}>
+                    {children}
+                </PersistGate>
+            ) : (
+                children
+            )}
         </Provider>
     );
 }

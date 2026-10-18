@@ -4,28 +4,26 @@ import "./globals.css";
 import { ReduxProviders } from "@/providers/ReduxProvider";
 
 const montserrat = Montserrat({
-  variable: "--font-sans",
-  subsets: ["latin"],
+    variable: "--font-sans",
+    subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "ReplyPilot AI",
-  description: "AI-Powered Customer Reply Automation",
+    metadataBase: new URL(process.env.NEXT_PUBLIC_CLIENT_URL || "https://replypilot.apponislam.top"),
+    title: "ReplyPilot AI",
+    description: "AI-Powered Customer Reply Automation",
 };
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html
-      lang="en"
-      className={`${montserrat.variable} h-full antialiased`}
-    >
-      <body className={`${montserrat.className} min-h-full flex flex-col`}>
-        <ReduxProviders>{children}</ReduxProviders>
-      </body>
-    </html>
-  );
+    return (
+        <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
+            <body className={`${montserrat.className} min-h-full flex flex-col`}>
+                <ReduxProviders>{children}</ReduxProviders>
+            </body>
+        </html>
+    );
 }

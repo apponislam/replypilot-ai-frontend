@@ -289,11 +289,7 @@ export const authApi = baseApi.injectEndpoints({
                 method: "PATCH",
                 body: data,
             }),
-            invalidatesTags: (result, error, { userId }) => [
-                "User",
-                { type: "User", id: userId },
-                "Admin",
-            ],
+            invalidatesTags: (result, error, { userId }) => ["User", { type: "User", id: userId }, "Admin"],
         }),
     }),
 });
