@@ -18,7 +18,7 @@ ReplyPilot AI is a state-of-the-art customer support and email automation platfo
 | Service | Environment | URL |
 | :--- | :--- | :--- |
 | **Frontend Web App** | Production | [https://replypilot.apponislam.top](https://replypilot.apponislam.top) |
-| **Backend REST API** | Production | [https://replypilotapi.apponislam.top/api/v1](https://replypilotapi.apponislam.top/api/v1) |
+| **Backend REST API** | Production | [https://replypilotapi.apponislam.top](https://replypilotapi.apponislam.top) |
 | **AI Inference Engine** | Self-Hosted Tunnel | **Ollama Open-Source LLM** connected via **Cloudflare Tunnel (`cloudflared`)** |
 
 ---
