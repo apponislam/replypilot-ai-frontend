@@ -10,6 +10,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock,
+    AlertCircle,
+    X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -63,6 +65,9 @@ function InboundEmailsContent() {
     const {
         data: inboundData,
         isLoading,
+        isError,
+        error,
+        isFetching,
         refetch,
     } = useGetAllInboundEmailsQuery({
         page,
@@ -104,11 +109,12 @@ function InboundEmailsContent() {
 
                 <Button
                     variant="outline"
+                    disabled={isLoading || isFetching}
                     onClick={() => refetch()}
                     className="self-start sm:self-auto text-xs gap-1.5"
                 >
-                    <RefreshCw className={cn("size-3.5", isLoading && "animate-spin")} />
-                    Refresh Inbox
+                    <RefreshCw className={cn("size-3.5", (isLoading || isFetching) && "animate-spin")} />
+                    {isFetching && !isLoading ? "Refreshing..." : "Refresh Inbox"}
                 </Button>
             </div>
 
@@ -151,17 +157,72 @@ function InboundEmailsContent() {
             {/* Full-width Email Inbound Inquiries List */}
             <div className="space-y-3 w-full">
                 {isLoading ? (
-                    <div className="rounded-xl border border-border/70 p-12 text-center bg-card">
-                        <RefreshCw className="size-6 text-ocean mx-auto mb-2 animate-spin" />
-                        <p className="text-xs text-muted-foreground font-medium">Loading inbox from server...</p>
+                    <div className="space-y-3">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div
+                                key={i}
+                                className="rounded-xl border border-border/70 bg-card p-5 animate-pulse space-y-3"
+                            >
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="h-4 w-48 rounded bg-muted/70" />
+                                    <div className="h-4 w-20 rounded bg-muted/60" />
+                                </div>
+                                <div className="h-4 w-3/4 rounded bg-muted/80" />
+                                <div className="h-3 w-1/2 rounded bg-muted/50" />
+                            </div>
+                        ))}
+                    </div>
+                ) : isError ? (
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-10 text-center space-y-3">
+                        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mx-auto">
+                            <AlertCircle className="size-6" />
+                        </div>
+                        <h3 className="text-sm font-bold text-foreground">Failed to load inbound emails</h3>
+                        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                            {typeof error === "object" && error && "data" in error && typeof (error as any).data?.message === "string"
+                                ? (error as any).data.message
+                                : "An error occurred while connecting to the email service. Please check your network and try again."}
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => refetch()}
+                            className="text-xs gap-1.5 border-destructive/30 hover:bg-destructive/10"
+                        >
+                            <RefreshCw className="size-3.5" />
+                            Try Again
+                        </Button>
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-border p-12 text-center bg-card">
-                        <Inbox className="size-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-                        <p className="text-sm font-semibold text-foreground">No inbound emails found</p>
-                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                            Incoming customer inquiries will appear here as soon as they are received.
-                        </p>
+                    <div className="rounded-xl border border-dashed border-border p-12 text-center bg-card space-y-3">
+                        <Inbox className="size-10 text-muted-foreground mx-auto opacity-40" />
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">
+                                {searchTerm || filterStatus !== "ALL"
+                                    ? "No matching emails found"
+                                    : "Your inbox is clear"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                                {searchTerm || filterStatus !== "ALL"
+                                    ? `No emails found matching "${searchTerm || filterStatus}". Try adjusting your search query or status filter.`
+                                    : "Incoming customer inquiries will appear here automatically as soon as they are received."}
+                            </p>
+                        </div>
+                        {(searchTerm || filterStatus !== "ALL") && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchTerm("");
+                                    setFilterStatus("ALL");
+                                    setPage(1);
+                                }}
+                                className="text-xs gap-1.5 h-8 px-3 rounded-lg"
+                            >
+                                <X className="size-3.5" />
+                                Clear Search &amp; Filters
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     filtered.map((em) => (
@@ -239,7 +300,7 @@ function InboundEmailsContent() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={page <= 1 || isLoading}
+                                disabled={page <= 1 || isLoading || isFetching}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 className="h-8 px-3 rounded-lg text-xs"
                             >
@@ -249,7 +310,7 @@ function InboundEmailsContent() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={page >= totalPages || isLoading}
+                                disabled={page >= totalPages || isLoading || isFetching}
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 className="h-8 px-3 rounded-lg text-xs"
                             >

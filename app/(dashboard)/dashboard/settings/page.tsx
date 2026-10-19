@@ -9,6 +9,7 @@ import {
     AlertCircle,
     HelpCircle,
     Mail,
+    RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,14 @@ export function SettingsContent() {
     const user = useAppSelector(currentUser);
     const isAdmin = user?.role === "ADMIN";
 
-    const { data: settingsData, isLoading } = useGetSettingsQuery();
+    const {
+        data: settingsData,
+        isLoading,
+        isError,
+        error,
+        isFetching,
+        refetch,
+    } = useGetSettingsQuery();
     const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation();
 
     const [isAutoReply, setIsAutoReply] = useState(false);
@@ -143,6 +151,102 @@ export function SettingsContent() {
         },
     ];
 
+    if (isLoading) {
+        return (
+            <div className="w-full space-y-6">
+                <div className="pb-2 border-b border-border/40">
+                    <div className="h-7 w-32 rounded-lg bg-muted/70 animate-pulse" />
+                    <div className="h-4 w-96 max-w-full rounded-md bg-muted/40 animate-pulse mt-2" />
+                </div>
+
+                <div className="w-full rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xs space-y-8 animate-pulse">
+                    {isAdmin && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-2">
+                                    <div className="h-5 w-52 rounded bg-muted/70" />
+                                    <div className="h-3.5 w-80 rounded bg-muted/40" />
+                                </div>
+                                <div className="h-6 w-12 rounded-full bg-muted/60" />
+                            </div>
+                            <div className="border-t border-border/40" />
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        <div className="h-5 w-60 rounded bg-muted/70" />
+                        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                                <div key={i} className="h-24 rounded-xl border border-border/60 bg-muted/20" />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="border-t border-border/40" />
+
+                    <div className="space-y-3">
+                        <div className="h-5 w-52 rounded bg-muted/70" />
+                        <div className="h-28 rounded-xl bg-muted/30" />
+                    </div>
+
+                    <div className="border-t border-border/40" />
+
+                    <div className="space-y-3">
+                        <div className="h-5 w-48 rounded bg-muted/70" />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="h-10 rounded-xl bg-muted/30" />
+                            <div className="h-10 rounded-xl bg-muted/30" />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-border/40 pt-2 flex justify-end">
+                        <div className="h-11 w-36 rounded-xl bg-muted/60" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="w-full space-y-6">
+                <div className="pb-2 border-b border-border/40">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        Settings
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        {isAdmin
+                            ? "Configure your AI auto-reply triggers, response personality, guidelines, and sender identity."
+                            : "Configure your AI response personality, custom guidelines, and sender identity."}
+                    </p>
+                </div>
+
+                <div className="w-full rounded-2xl border border-destructive/30 bg-destructive/5 p-12 text-center space-y-4">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mx-auto">
+                        <AlertCircle className="size-6" />
+                    </div>
+                    <div>
+                        <h2 className="text-base font-bold text-foreground">Failed to Load Settings</h2>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                            {typeof error === "object" && error && "data" in error && typeof (error as any).data?.message === "string"
+                                ? (error as any).data.message
+                                : "Unable to retrieve settings from the server. Please check your network connection and try again."}
+                        </p>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetch()}
+                        className="h-9 px-4 rounded-xl text-xs gap-1.5 border-destructive/30 hover:bg-destructive/10 text-destructive"
+                    >
+                        <RefreshCw className="size-3.5" />
+                        Retry Loading Settings
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full space-y-6">
             {/* Page Header */}
@@ -158,23 +262,36 @@ export function SettingsContent() {
                     </p>
                 </div>
 
-                {feedback && (
-                    <div
-                        className={cn(
-                            "flex items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-medium animate-in fade-in-50",
-                            feedback.type === "success"
-                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                                : "bg-destructive/10 border-destructive/20 text-destructive"
-                        )}
+                <div className="flex items-center gap-2.5">
+                    {feedback && (
+                        <div
+                            className={cn(
+                                "flex items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-medium animate-in fade-in-50",
+                                feedback.type === "success"
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-destructive/10 border-destructive/20 text-destructive"
+                            )}
+                        >
+                            {feedback.type === "success" ? (
+                                <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                            ) : (
+                                <AlertCircle className="size-4 shrink-0" />
+                            )}
+                            <span>{feedback.message}</span>
+                        </div>
+                    )}
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetch()}
+                        disabled={isFetching}
+                        className="gap-1.5 text-xs h-9 px-3 rounded-xl"
                     >
-                        {feedback.type === "success" ? (
-                            <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-                        ) : (
-                            <AlertCircle className="size-4 shrink-0" />
-                        )}
-                        <span>{feedback.message}</span>
-                    </div>
-                )}
+                        <RefreshCw className={cn("size-3.5", isFetching && "animate-spin")} />
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             {/* All in 1 Card */}

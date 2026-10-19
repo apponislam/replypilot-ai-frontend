@@ -1,15 +1,23 @@
 import React from "react";
 import Link from "next/link";
-import { Mail, ArrowRight, RefreshCw, Inbox } from "lucide-react";
+import { Mail, ArrowRight, RefreshCw, Inbox, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { IEmail } from "@/redux/features/email/emailApi";
 import { cn } from "@/lib/utils";
 
 interface RecentInquiriesProps {
     emails: IEmail[];
     isLoading: boolean;
+    isError?: boolean;
+    onRetry?: () => void;
 }
 
-export function RecentInquiries({ emails, isLoading }: RecentInquiriesProps) {
+export function RecentInquiries({
+    emails,
+    isLoading,
+    isError = false,
+    onRetry,
+}: RecentInquiriesProps) {
     return (
         <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between border-b border-border/40 pb-4">
@@ -38,9 +46,40 @@ export function RecentInquiries({ emails, isLoading }: RecentInquiriesProps) {
 
             {/* Inquiries Content */}
             {isLoading ? (
-                <div className="py-12 text-center">
-                    <RefreshCw className="size-6 text-ocean mx-auto mb-2 animate-spin" />
-                    <p className="text-xs text-muted-foreground">Loading inquiries...</p>
+                <div className="space-y-3 py-1">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 animate-pulse">
+                            <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-lg bg-muted/60" />
+                                <div className="space-y-1.5">
+                                    <div className="h-3 w-32 rounded bg-muted/70" />
+                                    <div className="h-2.5 w-48 rounded bg-muted/50" />
+                                </div>
+                            </div>
+                            <div className="h-4 w-16 rounded bg-muted/60" />
+                        </div>
+                    ))}
+                </div>
+            ) : isError ? (
+                <div className="py-10 text-center rounded-xl border border-destructive/30 bg-destructive/5 space-y-3">
+                    <AlertCircle className="size-8 text-destructive mx-auto" />
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">Failed to load recent inquiries</p>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                            Could not retrieve the latest tickets from the server.
+                        </p>
+                    </div>
+                    {onRetry && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onRetry}
+                            className="text-xs gap-1.5 h-8 px-3 rounded-lg border-destructive/30 hover:bg-destructive/10 text-destructive"
+                        >
+                            <RefreshCw className="size-3.5" />
+                            Retry
+                        </Button>
+                    )}
                 </div>
             ) : emails.length === 0 ? (
                 <div className="py-14 text-center rounded-xl border border-dashed border-border/70 bg-muted/20">

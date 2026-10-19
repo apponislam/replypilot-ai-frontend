@@ -9,6 +9,8 @@ import { useGetSettingsQuery } from "@/redux/features/setting/settingApi";
 import { useGetDashboardStatsQuery } from "@/redux/features/dashboard/dashboardApi";
 import { useMounted } from "@/hooks/use-mounted";
 
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { RecentInquiries } from "@/components/dashboard/recent-inquiries";
@@ -47,6 +49,7 @@ function DashboardContent() {
     const {
         data: inboundData,
         isLoading: isLoadingEmails,
+        isError: isErrorEmails,
         refetch: refetchEmails,
     } = useGetAllInboundEmailsQuery(undefined, {
         refetchOnMountOrArgChange: true,
@@ -56,6 +59,7 @@ function DashboardContent() {
     const {
         data: statsResponse,
         isLoading: isLoadingStats,
+        isError: isErrorStats,
         refetch: refetchStats,
     } = useGetDashboardStatsQuery(undefined, {
         refetchOnMountOrArgChange: true,
@@ -86,6 +90,24 @@ function DashboardContent() {
         <div className="space-y-8">
             <DashboardHeader userDisplayName={userDisplayName} isLoading={isLoadingEmails || isLoadingStats} onRefresh={handleRefreshAll} />
 
+            {(isErrorEmails || isErrorStats) && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-xs text-destructive">
+                    <div className="flex items-center gap-2.5">
+                        <AlertCircle className="size-4 shrink-0" />
+                        <span>Unable to sync dashboard live data with the server. Please check your connection.</span>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefreshAll}
+                        className="text-xs gap-1.5 border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 self-start sm:self-auto h-8 px-3 rounded-lg"
+                    >
+                        <RefreshCw className="size-3.5" />
+                        Retry Sync
+                    </Button>
+                </div>
+            )}
+
             <DashboardStats
                 totalEmails={totalEmails}
                 unreadEmails={unreadEmails}
@@ -100,7 +122,12 @@ function DashboardContent() {
 
             <div className="grid gap-6 lg:grid-cols-12">
                 <div className="lg:col-span-8">
-                    <RecentInquiries emails={emailsList.slice(0, 6)} isLoading={isLoadingEmails} />
+                    <RecentInquiries
+                        emails={emailsList.slice(0, 6)}
+                        isLoading={isLoadingEmails}
+                        isError={isErrorEmails}
+                        onRetry={refetchEmails}
+                    />
                 </div>
 
                 <div className="lg:col-span-4 space-y-6">

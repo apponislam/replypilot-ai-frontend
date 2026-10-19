@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw, Mail } from "lucide-react";
+import { ArrowLeft, RefreshCw, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetEmailWithRepliesQuery } from "@/redux/features/email/emailApi";
 import { useAppSelector } from "@/redux/hooks";
@@ -45,6 +45,8 @@ function EmailDetailContent() {
     const {
         data: emailResponse,
         isLoading,
+        isError,
+        error,
         isFetching,
         refetch,
     } = useGetEmailWithRepliesQuery(emailId, {
@@ -60,6 +62,36 @@ function EmailDetailContent() {
             <div className="flex h-96 flex-col items-center justify-center gap-3">
                 <RefreshCw className="size-6 text-ocean animate-spin" />
                 <p className="text-xs text-muted-foreground font-medium">Loading email inquiry...</p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-12 text-center space-y-4">
+                <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mx-auto">
+                    <AlertCircle className="size-6" />
+                </div>
+                <div>
+                    <h2 className="text-base font-bold text-foreground">Failed to Load Inquiry</h2>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                        {typeof error === "object" && error && "data" in error && typeof (error as any).data?.message === "string"
+                            ? (error as any).data.message
+                            : "An error occurred while loading this email inquiry. Please try again."}
+                    </p>
+                </div>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => refetch()} className="h-9 px-4 rounded-xl text-xs gap-1.5">
+                        <RefreshCw className="size-3.5" />
+                        Try Again
+                    </Button>
+                    <Link href="/dashboard/emails">
+                        <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl text-xs">
+                            <ArrowLeft className="size-3.5 mr-1.5" />
+                            Back to Inbox
+                        </Button>
+                    </Link>
+                </div>
             </div>
         );
     }

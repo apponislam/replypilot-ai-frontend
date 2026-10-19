@@ -20,7 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="flex items-center gap-3">
                             <SidebarTrigger className="-ml-1 text-foreground/80 hover:text-foreground transition-colors" />
                             <Separator orientation="vertical" className="h-4" />
-                            <DashboardBreadcrumb />
+                            <React.Suspense fallback={<span className="text-sm font-semibold tracking-tight text-foreground">ReplyPilot</span>}>
+                                <DashboardBreadcrumb />
+                            </React.Suspense>
                         </div>
                     </header>
 

@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
                 destination: "/terms",
                 permanent: true,
             },
+            {
+                source: "/dashboard/settings/ai",
+                destination: "/dashboard/settings",
+                permanent: true,
+            },
         ];
     },
 };
