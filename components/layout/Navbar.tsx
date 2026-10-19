@@ -2,11 +2,29 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MessageSquareText, Menu, X, ArrowRight } from "lucide-react";
+import { MessageSquareText, Menu, X, ArrowRight, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAppSelector } from "@/redux/hooks";
+import { currentUser } from "@/redux/features/auth/authSlice";
+import { useMounted } from "@/hooks/use-mounted";
+import { getUserAvatarUrl } from "@/lib/utils";
 
 export function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const isMounted = useMounted();
+    const user = useAppSelector(currentUser);
+
+    const userDisplayName = user?.name || "User";
+    const userInitials = (userDisplayName || "U")
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "U";
+
+    const avatarUrl = getUserAvatarUrl(user?.profileImage);
+    const dashboardLink = user?.role === "USER" ? "/dashboard/replies" : "/dashboard";
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
@@ -35,17 +53,58 @@ export function Navbar() {
                     </a>
                 </nav>
 
-                {/* Desktop CTA Buttons */}
+                {/* Desktop CTA Buttons / User Profile */}
                 <div className="hidden md:flex items-center gap-3">
-                    <Link href="/login" className="text-sm font-medium text-foreground/80 hover:text-foreground px-3.5 py-2 transition-colors">
-                        Sign In
-                    </Link>
-                    <Link href="/register">
-                        <Button className="h-10 px-4 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-sm shadow-sm shadow-ocean/25 transition-all">
-                            Start Free Trial
-                            <ArrowRight className="w-4 h-4 ml-1.5" />
-                        </Button>
-                    </Link>
+                    {isMounted && user ? (
+                        <div className="flex items-center gap-3">
+                            <Link
+                                href={dashboardLink}
+                                className="flex items-center gap-2.5 p-1 pr-3 rounded-full hover:bg-muted/70 border border-border/60 transition-colors group"
+                            >
+                                <div className="size-8 rounded-full overflow-hidden bg-ocean text-white font-bold text-xs flex items-center justify-center shrink-0 border border-border/40 shadow-xs">
+                                    {avatarUrl ? (
+                                        <img
+                                            src={avatarUrl}
+                                            alt={userDisplayName}
+                                            className="size-full object-cover"
+                                            onError={(e) => {
+                                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                                            }}
+                                        />
+                                    ) : (
+                                        <span>{userInitials}</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col text-left leading-tight">
+                                    <span className="text-xs font-semibold text-foreground group-hover:text-ocean transition-colors truncate max-w-[120px]">
+                                        {userDisplayName}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
+                                        {user.role}
+                                    </span>
+                                </div>
+                            </Link>
+
+                            <Link href={dashboardLink}>
+                                <Button className="h-9 px-3.5 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-xs shadow-xs shadow-ocean/25 transition-all gap-1.5">
+                                    <LayoutDashboard className="size-3.5" />
+                                    <span>Workspace</span>
+                                </Button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <>
+                            <Link href="/login" className="text-sm font-medium text-foreground/80 hover:text-foreground px-3.5 py-2 transition-colors">
+                                Sign In
+                            </Link>
+                            <Link href="/register">
+                                <Button className="h-10 px-4 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-sm shadow-sm shadow-ocean/25 transition-all">
+                                    Start Free Trial
+                                    <ArrowRight className="w-4 h-4 ml-1.5" />
+                                </Button>
+                            </Link>
+                        </>
+                    )}
                 </div>
 
                 {/* Mobile menu trigger */}
@@ -72,12 +131,45 @@ export function Navbar() {
                         </a>
                     </nav>
                     <div className="pt-3 border-t border-border flex flex-col gap-2.5">
-                        <Link href="/login" className="text-center py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-xl border border-border">
-                            Sign In
-                        </Link>
-                        <Link href="/register">
-                            <Button className="w-full h-11 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-sm shadow-sm shadow-ocean/25">Start Free Trial</Button>
-                        </Link>
+                        {isMounted && user ? (
+                            <>
+                                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                                    <div className="size-10 rounded-full overflow-hidden bg-ocean text-white font-bold text-xs flex items-center justify-center shrink-0">
+                                        {avatarUrl ? (
+                                            <img
+                                                src={avatarUrl}
+                                                alt={userDisplayName}
+                                                className="size-full object-cover"
+                                                onError={(e) => {
+                                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                                }}
+                                            />
+                                        ) : (
+                                            <span>{userInitials}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-semibold text-foreground truncate">{userDisplayName}</span>
+                                        <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                                    </div>
+                                </div>
+                                <Link href={dashboardLink} onClick={() => setMobileMenuOpen(false)}>
+                                    <Button className="w-full h-11 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-sm shadow-sm shadow-ocean/25 gap-2">
+                                        <LayoutDashboard className="size-4" />
+                                        <span>Open Workspace</span>
+                                    </Button>
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-center py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-xl border border-border">
+                                    Sign In
+                                </Link>
+                                <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                                    <Button className="w-full h-11 rounded-xl bg-ocean hover:bg-ocean-dark text-white font-medium text-sm shadow-sm shadow-ocean/25">Start Free Trial</Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

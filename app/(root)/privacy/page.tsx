@@ -125,8 +125,8 @@ export default function PrivacyPolicyPage() {
                         <p className="font-semibold text-foreground">ReplyPilot Privacy &amp; Data Protection</p>
                         <p className="flex items-center gap-1.5">
                             <Mail className="size-3.5 text-ocean" />
-                            <a href="mailto:privacy@replypilot.com" className="text-ocean hover:underline">
-                                privacy@replypilot.com
+                            <a href="mailto:replypilotai@apponislam.top" className="text-ocean hover:underline">
+                                replypilotai@apponislam.top
                             </a>
                         </p>
                     </div>

@@ -27,7 +27,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
+import { cn, getUserAvatarUrl } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { currentUser, logOut } from "@/redux/features/auth/authSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApi";
@@ -198,8 +198,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarFooter className="border-t border-sidebar-border/40 p-4 mt-auto">
                 <div className="flex items-center justify-between gap-3 rounded-xl bg-sidebar-accent/30 border border-sidebar-border/30 p-2.5 transition-colors hover:bg-sidebar-accent/50">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-navy-border to-navy font-bold text-xs text-white shadow-xs">
-                            {userInitials}
+                        <div className="flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-linear-to-br from-navy-border to-navy font-bold text-xs text-white shadow-xs">
+                            {user?.profileImage ? (
+                                <img
+                                    src={getUserAvatarUrl(user.profileImage) || ""}
+                                    alt={userDisplayName}
+                                    className="size-full object-cover"
+                                    onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                                    }}
+                                />
+                            ) : (
+                                <span>{userInitials}</span>
+                            )}
                         </div>
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5">

@@ -106,7 +106,7 @@ export function Footer() {
                 </span>
               </li>
               <li>
-                <a href="mailto:support@replypilot.com" className="hover:text-foreground transition-colors">
+                <a href="mailto:replypilotai@apponislam.top" className="hover:text-foreground transition-colors">
                   Contact Us
                 </a>
               </li>

@@ -180,8 +180,8 @@ export default function TermsAndConditionsPage() {
                         <p className="font-semibold text-foreground">ReplyPilot Legal &amp; Compliance</p>
                         <p className="flex items-center gap-1.5">
                             <Mail className="size-3.5 text-ocean" />
-                            <a href="mailto:support@replypilot.com" className="text-ocean hover:underline">
-                                support@replypilot.com
+                            <a href="mailto:replypilotai@apponislam.top" className="text-ocean hover:underline">
+                                replypilotai@apponislam.top
                             </a>
                         </p>
                     </div>

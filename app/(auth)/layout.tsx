@@ -24,7 +24,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
                         <div className="text-xs text-muted-foreground hidden sm:block">
                             Need help?{" "}
-                            <a href="mailto:support@replypilot.com" className="font-medium text-ocean hover:text-ocean-dark dark:text-mint hover:underline">
+                            <a href="mailto:replypilotai@apponislam.top" className="font-medium text-ocean hover:text-ocean-dark dark:text-mint hover:underline">
                                 Contact Support
                             </a>
                         </div>
