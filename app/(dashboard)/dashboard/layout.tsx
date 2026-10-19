@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProtectedRouteProvider } from "@/providers/ProtectedRouteProvider";
 
 import { DashboardBreadcrumb } from "@/components/dashboard/dashboard-breadcrumb";
+import { EmailVerificationAlert } from "@/components/dashboard/email-verification-alert";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -22,6 +23,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <DashboardBreadcrumb />
                         </div>
                     </header>
+
+                    {/* Email Verification Banner - Flush & Joint with Navbar */}
+                    <EmailVerificationAlert />
 
                     {/* Dashboard Page Main Content */}
                     <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 bg-muted/20">

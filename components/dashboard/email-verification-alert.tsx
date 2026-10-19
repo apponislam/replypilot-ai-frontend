@@ -12,22 +12,32 @@ import { Button } from "@/components/ui/button";
 import {
     MailWarning,
     ArrowRight,
-    RefreshCw,
     Loader2,
     CheckCircle2,
     AlertCircle,
 } from "lucide-react";
 
+import { useMounted } from "@/hooks/use-mounted";
+
 export function EmailVerificationAlert() {
+    const isMounted = useMounted();
+
+    if (!isMounted) {
+        return null;
+    }
+
+    return <EmailVerificationAlertContent />;
+}
+
+function EmailVerificationAlertContent() {
     const dispatch = useAppDispatch();
     const user = useAppSelector(currentUser);
 
     const {
         data: verificationData,
         isLoading: isChecking,
-        isFetching,
-        refetch,
     } = useCheckEmailVerifiedQuery(undefined, {
+        skip: !user,
         refetchOnMountOrArgChange: true,
     });
 
@@ -71,7 +81,7 @@ export function EmailVerificationAlert() {
 
         try {
             await resendVerification({ email }).unwrap();
-            setResendStatus("A fresh verification code has been sent to your inbox.");
+            setResendStatus("Verification code sent to your inbox.");
             setCountdown(60);
             setTimeout(() => setResendStatus(null), 4000);
         } catch (err: unknown) {
@@ -86,66 +96,50 @@ export function EmailVerificationAlert() {
     };
 
     return (
-        <div className="w-full rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5 shadow-xs transition-all">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5 min-w-0">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs">
-                        <MailWarning className="size-5" />
+        <aside
+            aria-label="Email verification notice"
+            className="sticky top-16 z-10 w-full border-b border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 backdrop-blur-md px-4 md:px-6 py-2.5 transition-all"
+        >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                        <MailWarning className="size-4" />
                     </div>
-
-                    <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
-                                Verify your email address
-                            </h3>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                                Unverified
-                            </span>
-                        </div>
-                        <p className="text-xs text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
-                            Your account email <strong className="font-semibold text-amber-950 dark:text-amber-100">{email}</strong> has not been verified yet. Please enter your 6-digit code to enable full access.
-                        </p>
-
+                    <div className="min-w-0 text-xs text-amber-900 dark:text-amber-200">
+                        <span>
+                            Your account email{" "}
+                            <strong className="font-semibold text-amber-950 dark:text-amber-100">
+                                {email}
+                            </strong>{" "}
+                            has not been verified yet. Enter your 6-digit code to enable full access.
+                        </span>
                         {resendStatus && (
-                            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 pt-1">
-                                <CheckCircle2 className="size-3.5 shrink-0" />
+                            <span className="ml-2 font-medium text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                <CheckCircle2 className="size-3 shrink-0" />
                                 {resendStatus}
-                            </p>
+                            </span>
                         )}
                         {resendError && (
-                            <p className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-1">
-                                <AlertCircle className="size-3.5 shrink-0" />
+                            <span className="ml-2 font-medium text-destructive inline-flex items-center gap-1">
+                                <AlertCircle className="size-3 shrink-0" />
                                 {resendError}
-                            </p>
+                            </span>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 self-start md:self-auto flex-wrap">
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                     <Button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refetch()}
-                        disabled={isFetching}
-                        title="Check verification status"
-                        className="h-9 px-3 rounded-xl border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-medium"
-                    >
-                        <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                        <span className="hidden sm:inline">Check Status</span>
-                    </Button>
-
-                    <Button
-                        type="button"
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={handleResend}
                         disabled={isResending || countdown > 0}
-                        className="h-9 px-3.5 rounded-xl border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold"
+                        className="h-8 px-3 rounded-lg text-amber-900 hover:text-amber-950 dark:text-amber-200 dark:hover:text-amber-100 hover:bg-amber-500/20 text-xs font-medium border border-amber-500/30"
                     >
                         {isResending ? (
                             <>
-                                <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+                                <Loader2 className="size-3 mr-1.5 animate-spin" />
                                 Sending...
                             </>
                         ) : countdown > 0 ? (
@@ -158,15 +152,15 @@ export function EmailVerificationAlert() {
                     <Link href={`/verify-otp?email=${encodeURIComponent(email)}&type=email-verification`}>
                         <Button
                             size="sm"
-                            className="h-9 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs shadow-amber-600/30 transition-all hover:scale-[1.02]"
+                            className="h-8 px-3.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition-colors"
                         >
                             Verify Now
-                            <ArrowRight className="size-3.5 ml-1.5" />
+                            <ArrowRight className="size-3 ml-1" />
                         </Button>
                     </Link>
                 </div>
             </div>
-        </div>
+        </aside>
     );
 }
 

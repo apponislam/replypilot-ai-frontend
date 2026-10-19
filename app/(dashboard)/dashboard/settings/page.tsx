@@ -13,8 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGetSettingsQuery, useUpdateSettingsMutation, ToneType } from "@/redux/features/setting/settingApi";
+import { useGetSettingsQuery, useUpdateSettingsMutation, ToneType, UpdateSettingRequest } from "@/redux/features/setting/settingApi";
 import { useMounted } from "@/hooks/use-mounted";
+import { useAppSelector } from "@/redux/hooks";
+import { currentUser } from "@/redux/features/auth/authSlice";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -32,6 +34,9 @@ export default function SettingsPage() {
 }
 
 export function SettingsContent() {
+    const user = useAppSelector(currentUser);
+    const isAdmin = user?.role === "ADMIN";
+
     const { data: settingsData, isLoading } = useGetSettingsQuery();
     const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation();
 
@@ -83,13 +88,18 @@ export function SettingsContent() {
         setFeedback(null);
 
         try {
-            await updateSettings({
-                isAutoReply,
+            const payload: UpdateSettingRequest = {
                 tone,
                 instructions: instructions.trim(),
                 senderName: senderName.trim(),
                 senderEmail: senderEmail.trim(),
-            }).unwrap();
+            };
+
+            if (isAdmin) {
+                payload.isAutoReply = isAutoReply;
+            }
+
+            await updateSettings(payload).unwrap();
 
             setFeedback({
                 type: "success",
@@ -142,7 +152,9 @@ export function SettingsContent() {
                         Settings
                     </h1>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Configure your AI auto-reply triggers, response tone, guidelines, and sender identity.
+                        {isAdmin
+                            ? "Configure your AI auto-reply triggers, response personality, guidelines, and sender identity."
+                            : "Configure your AI response personality, custom guidelines, and sender identity."}
                     </p>
                 </div>
 
@@ -168,43 +180,47 @@ export function SettingsContent() {
             {/* All in 1 Card */}
             <div className="w-full rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xs">
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* 1. Autonomous Auto-Pilot Mode Toggle (Hits API immediately) */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <Bot className="size-5 text-ocean" />
-                                <h2 className="text-base font-bold text-foreground">
-                                    Autonomous Auto-Pilot Mode
-                                </h2>
-                                <span
-                                    className={cn(
-                                        "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                                        isAutoReply
-                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                            : "bg-muted text-muted-foreground border-border"
-                                    )}
-                                >
-                                    {isAutoReply ? "Active" : "Manual Review"}
-                                </span>
+                    {/* 1. Autonomous Auto-Pilot Mode Toggle (Admin Only - Hits API immediately) */}
+                    {isAdmin && (
+                        <>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <Bot className="size-5 text-ocean" />
+                                        <h2 className="text-base font-bold text-foreground">
+                                            Autonomous Auto-Pilot Mode
+                                        </h2>
+                                        <span
+                                            className={cn(
+                                                "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                                                isAutoReply
+                                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                                    : "bg-muted text-muted-foreground border-border"
+                                            )}
+                                        >
+                                            {isAutoReply ? "Active" : "Manual Review"}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                        When active, inbound emails are automatically drafted and dispatched without requiring human approval.
+                                    </p>
+                                </div>
+
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAutoReply}
+                                        disabled={isToggling}
+                                        onChange={(e) => handleToggleAutoReply(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-12 h-6.5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-border after:border after:rounded-full after:h-5.5 after:w-5.5 after:transition-all peer-checked:bg-ocean" />
+                                </label>
                             </div>
-                            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                When active, inbound emails are automatically drafted and dispatched without requiring human approval.
-                            </p>
-                        </div>
 
-                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                            <input
-                                type="checkbox"
-                                checked={isAutoReply}
-                                disabled={isToggling}
-                                onChange={(e) => handleToggleAutoReply(e.target.checked)}
-                                className="sr-only peer"
-                            />
-                            <div className="w-12 h-6.5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-border after:border after:rounded-full after:h-5.5 after:w-5.5 after:transition-all peer-checked:bg-ocean" />
-                        </label>
-                    </div>
-
-                    <div className="border-t border-border/50" />
+                            <div className="border-t border-border/50" />
+                        </>
+                    )}
 
                     {/* 2. Response Personality & Tone */}
                     <div className="space-y-3.5">

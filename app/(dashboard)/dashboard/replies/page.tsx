@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGetUserRepliesQuery, useGenerateReplyMutation, useSendReplyMutation, useDeleteUserReplyMutation, IUserReply } from "@/redux/features/userReply/userReplyApi";
 import { useMounted } from "@/hooks/use-mounted";
-import { EmailVerificationAlert } from "@/components/dashboard/email-verification-alert";
 
 export default function RepliesPage() {
     const isMounted = useMounted();
@@ -101,8 +100,6 @@ function RepliesContent() {
                 </Button>
             </div>
 
-            {/* Email verification alert (driven by /auth/check-email-verified) */}
-            <EmailVerificationAlert />
 
             {statusMessage && (
                 <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 text-xs text-emerald-700 dark:text-emerald-300">
