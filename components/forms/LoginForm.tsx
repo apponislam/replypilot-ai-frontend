@@ -61,9 +61,10 @@ export function LoginForm() {
             token: response.data.accessToken,
           })
         );
-        setSuccessMessage("Login successful! Redirecting to dashboard...");
+        const targetRoute = response.data.user.role === "USER" ? "/dashboard/replies" : "/dashboard";
+        setSuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push(targetRoute);
         }, 800);
       } else {
         setServerError(response?.message || "Failed to log in.");

@@ -132,6 +132,7 @@ export const emailApi = baseApi.injectEndpoints({
             invalidatesTags: (_result, _error, { id }) => [
                 { type: "Email", id },
                 { type: "Email", id: "LIST" },
+                { type: "Dashboard" },
             ],
         }),
 
@@ -145,6 +146,7 @@ export const emailApi = baseApi.injectEndpoints({
             invalidatesTags: (_result, _error, { id }) => [
                 { type: "Email", id },
                 { type: "Email", id: "LIST" },
+                { type: "Dashboard" },
             ],
         }),
 
@@ -157,6 +159,7 @@ export const emailApi = baseApi.injectEndpoints({
             invalidatesTags: (_result, _error, id) => [
                 { type: "Email", id },
                 { type: "Email", id: "LIST" },
+                { type: "Dashboard" },
             ],
         }),
     }),

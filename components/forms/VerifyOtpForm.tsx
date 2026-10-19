@@ -6,7 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
 import { verifyOtpSchema, VerifyOtpFormData } from "@/lib/validations/auth";
-import { useVerifyOtpMutation, useResendOtpMutation } from "@/redux/features/auth/authApi";
+import {
+    useVerifyOtpMutation,
+    useResendOtpMutation,
+    useLazyVerifyEmailQuery,
+    useResendVerificationEmailMutation,
+} from "@/redux/features/auth/authApi";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { updateUser, currentUser } from "@/redux/features/auth/authSlice";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, ArrowRight, ArrowLeft, Loader2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 
@@ -17,10 +24,22 @@ interface VerifyOtpFormProps {
 export function VerifyOtpForm({ email: initialEmail }: VerifyOtpFormProps = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const dispatch = useAppDispatch();
+    const user = useAppSelector(currentUser);
+
+    const isEmailVerification = searchParams.get("type") === "email-verification";
     const email = initialEmail || searchParams.get("email") || "";
 
-    const [verifyOtp, { isLoading: isVerifying }] = useVerifyOtpMutation();
-    const [resendOtp, { isLoading: isResending }] = useResendOtpMutation();
+    // Password reset OTP hooks
+    const [verifyPasswordOtp, { isLoading: isVerifyingPasswordOtp }] = useVerifyOtpMutation();
+    const [resendPasswordOtp, { isLoading: isResendingPasswordOtp }] = useResendOtpMutation();
+
+    // Email verification hooks
+    const [triggerVerifyEmail, { isLoading: isVerifyingEmail }] = useLazyVerifyEmailQuery();
+    const [resendVerificationEmail, { isLoading: isResendingEmail }] = useResendVerificationEmailMutation();
+
+    const isVerifying = isEmailVerification ? isVerifyingEmail : isVerifyingPasswordOtp;
+    const isResending = isEmailVerification ? isResendingEmail : isResendingPasswordOtp;
 
     const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
     const [countdown, setCountdown] = useState(60);
@@ -95,25 +114,44 @@ export function VerifyOtpForm({ email: initialEmail }: VerifyOtpFormProps = {}) 
             return;
         }
 
-        try {
-            const response = await verifyOtp({
-                email,
-                otp: values.otp,
-            }).unwrap();
+        if (isEmailVerification) {
+            try {
+                await triggerVerifyEmail({
+                    email,
+                    otp: values.otp,
+                }).unwrap();
 
-            const resetToken = response?.data?.token;
-
-            if (resetToken) {
-                setSuccessMessage("Code verified successfully! Redirecting...");
+                dispatch(updateUser({ isEmailVerified: true }));
+                const targetRoute = user?.role === "USER" ? "/dashboard/replies" : "/dashboard";
+                setSuccessMessage("Email verified successfully! Redirecting...");
                 setTimeout(() => {
-                    router.push(`/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(email)}`);
-                }, 800);
-            } else {
-                setServerError("Verification succeeded, but no reset token was returned.");
+                    router.push(targetRoute);
+                }, 1000);
+            } catch (err: unknown) {
+                const errorObj = err as { data?: { message?: string }; message?: string };
+                setServerError(errorObj?.data?.message || errorObj?.message || "Invalid or expired verification code.");
             }
-        } catch (err: unknown) {
-            const errorObj = err as { data?: { message?: string }; message?: string };
-            setServerError(errorObj?.data?.message || errorObj?.message || "Invalid or expired OTP code. Please request a new one.");
+        } else {
+            try {
+                const response = await verifyPasswordOtp({
+                    email,
+                    otp: values.otp,
+                }).unwrap();
+
+                const resetToken = response?.data?.token;
+
+                if (resetToken) {
+                    setSuccessMessage("Code verified successfully! Redirecting...");
+                    setTimeout(() => {
+                        router.push(`/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(email)}`);
+                    }, 800);
+                } else {
+                    setServerError("Verification succeeded, but no reset token was returned.");
+                }
+            } catch (err: unknown) {
+                const errorObj = err as { data?: { message?: string }; message?: string };
+                setServerError(errorObj?.data?.message || errorObj?.message || "Invalid or expired OTP code. Please request a new one.");
+            }
         }
     };
 
@@ -123,20 +161,34 @@ export function VerifyOtpForm({ email: initialEmail }: VerifyOtpFormProps = {}) 
         setSuccessMessage(null);
 
         if (!email) {
-            setServerError("No email specified to resend OTP.");
+            setServerError("No email specified to resend verification code.");
             return;
         }
 
-        try {
-            await resendOtp({ email }).unwrap();
-            setSuccessMessage("A fresh 6-digit OTP code has been sent to your email.");
-            setCountdown(60);
-            setDigits(["", "", "", "", "", ""]);
-            setValue("otp", "");
-            inputRefs.current[0]?.focus();
-        } catch (err: unknown) {
-            const errorObj = err as { data?: { message?: string }; message?: string };
-            setServerError(errorObj?.data?.message || errorObj?.message || "Failed to resend OTP. Please try again.");
+        if (isEmailVerification) {
+            try {
+                await resendVerificationEmail({ email }).unwrap();
+                setSuccessMessage("A fresh 6-digit verification code has been sent to your email.");
+                setCountdown(60);
+                setDigits(["", "", "", "", "", ""]);
+                setValue("otp", "");
+                inputRefs.current[0]?.focus();
+            } catch (err: unknown) {
+                const errorObj = err as { data?: { message?: string }; message?: string };
+                setServerError(errorObj?.data?.message || errorObj?.message || "Failed to resend verification code. Please try again.");
+            }
+        } else {
+            try {
+                await resendPasswordOtp({ email }).unwrap();
+                setSuccessMessage("A fresh 6-digit OTP code has been sent to your email.");
+                setCountdown(60);
+                setDigits(["", "", "", "", "", ""]);
+                setValue("otp", "");
+                inputRefs.current[0]?.focus();
+            } catch (err: unknown) {
+                const errorObj = err as { data?: { message?: string }; message?: string };
+                setServerError(errorObj?.data?.message || errorObj?.message || "Failed to resend OTP. Please try again.");
+            }
         }
     };
 
@@ -147,7 +199,9 @@ export function VerifyOtpForm({ email: initialEmail }: VerifyOtpFormProps = {}) 
             </div>
 
             <div className="space-y-1.5 text-left">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Enter verification code</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                    {isEmailVerification ? "Verify your email" : "Enter verification code"}
+                </h1>
                 <p className="text-sm text-muted-foreground">
                     We sent a 6-digit code to <strong className="text-foreground font-medium">{email || "your email"}</strong>.
                 </p>
@@ -228,10 +282,17 @@ export function VerifyOtpForm({ email: initialEmail }: VerifyOtpFormProps = {}) 
             </form>
 
             <div className="text-center pt-2">
-                <Link href="/forgot-password" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                    <ArrowLeft className="w-4 h-4" />
-                    Change email address
-                </Link>
+                {isEmailVerification ? (
+                    <Link href="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Login
+                    </Link>
+                ) : (
+                    <Link href="/forgot-password" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        Change email address
+                    </Link>
+                )}
             </div>
         </div>
     );

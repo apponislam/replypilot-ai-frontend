@@ -11,6 +11,7 @@ import {
     Settings,
     LogOut,
     ShieldCheck,
+    Loader2,
 } from "lucide-react";
 
 import {
@@ -29,37 +30,48 @@ import {
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { currentUser, logOut } from "@/redux/features/auth/authSlice";
+import { useLogoutMutation } from "@/redux/features/auth/authApi";
+import { baseApi } from "@/redux/api/baseApi";
+import { persistor } from "@/redux/store";
 
-// Curated essential navigation items - clean, minimal, no clutter
-const navItems = [
+// Curated navigation items with role restrictions
+const allNavItems = [
     {
         title: "Dashboard",
         url: "/dashboard",
         icon: LayoutDashboard,
+        roles: ["ADMIN"],
     },
     {
         title: "Inbound Emails",
         url: "/dashboard/emails",
         icon: Inbox,
+        roles: ["ADMIN"],
     },
     {
         title: "Draft Replies",
         url: "/dashboard/replies",
         icon: Sparkles,
+        roles: ["ADMIN", "USER"],
     },
     {
         title: "Settings",
         url: "/dashboard/settings",
         icon: Settings,
+        roles: ["ADMIN", "USER"],
     },
 ];
 
 function SidebarNavItems() {
     const pathname = usePathname();
+    const user = useAppSelector(currentUser);
+    const userRole = user?.role || "ADMIN";
+
+    const visibleItems = allNavItems.filter((item) => item.roles.includes(userRole));
 
     return (
         <SidebarMenu className="gap-2.5">
-            {navItems.map((item) => {
+            {visibleItems.map((item) => {
                 const isActive =
                     item.url === "/dashboard"
                         ? pathname === "/dashboard"
@@ -96,7 +108,7 @@ function SidebarNavItems() {
 function SidebarNavFallback() {
     return (
         <SidebarMenu className="gap-2.5">
-            {navItems.map((item) => (
+            {allNavItems.slice(0, 2).map((item) => (
                 <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                         render={<Link href={item.url} />}
@@ -115,26 +127,43 @@ function SidebarNavFallback() {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const dispatch = useAppDispatch();
     const user = useAppSelector(currentUser);
+    const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
-    const handleLogout = () => {
-        dispatch(logOut());
+    const handleLogout = async () => {
+        try {
+            await logoutMutation().unwrap();
+        } catch {
+            // Ignore API network errors during logout to allow client cleanup
+        } finally {
+            dispatch(logOut());
+            dispatch(baseApi.util.resetApiState());
+            if (typeof window !== "undefined") {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = "/login";
+            }
+            try {
+                await persistor.purge();
+            } catch (_) {}
+        }
     };
 
-    const userDisplayName = user?.name || "Appon Islam";
-    const userDisplayEmail = user?.email || "appon@replypilot.ai";
-    const userInitials = userDisplayName
+    const userDisplayName = user?.name || "User";
+    const userDisplayEmail = user?.email || "";
+    const userInitials = (userDisplayName || "U")
         .split(" ")
+        .filter(Boolean)
         .map((part) => part[0])
         .join("")
         .slice(0, 2)
-        .toUpperCase();
+        .toUpperCase() || "U";
 
     return (
         <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border/50" {...props}>
             {/* Brand Header with generous padding */}
             <SidebarHeader className="p-5 border-b border-sidebar-border/40">
                 <Link
-                    href="/dashboard"
+                    href={user?.role === "USER" ? "/dashboard/replies" : "/dashboard"}
                     className="flex items-center gap-3.5 group transition-opacity hover:opacity-95"
                 >
                     <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-linear-to-br from-ocean to-ocean-dark text-white shadow-md shadow-ocean/30 ring-1 ring-white/10 transition-transform group-hover:scale-105">
@@ -190,11 +219,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <button
                         type="button"
                         onClick={handleLogout}
+                        disabled={isLoggingOut}
                         title="Log out"
-                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-red-400 hover:bg-red-500/15 transition-all"
+                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-red-400 hover:bg-red-500/15 transition-all disabled:opacity-50"
                         aria-label="Log out"
                     >
-                        <LogOut className="size-4" />
+                        {isLoggingOut ? (
+                            <Loader2 className="size-4 animate-spin text-red-400" />
+                        ) : (
+                            <LogOut className="size-4" />
+                        )}
                     </button>
                 </div>
             </SidebarFooter>

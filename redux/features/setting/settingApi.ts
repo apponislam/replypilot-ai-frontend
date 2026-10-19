@@ -5,6 +5,7 @@ export type ToneType = "professional" | "friendly" | "concise" | "formal" | "cas
 
 export interface ISetting {
     _id?: string;
+    user?: string;
     isAutoReply: boolean;
     instructions: string;
     tone: ToneType;
@@ -36,7 +37,7 @@ export const settingApi = baseApi.injectEndpoints({
                 method: "PATCH",
                 body,
             }),
-            invalidatesTags: ["Setting"],
+            invalidatesTags: ["Setting", "Dashboard"],
         }),
     }),
 });

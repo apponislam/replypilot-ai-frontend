@@ -11,9 +11,13 @@ import {
     ChevronRight,
     Clock,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGetAllInboundEmailsQuery, IEmail, EmailStatus } from "@/redux/features/email/emailApi";
+import { useAppSelector } from "@/redux/hooks";
+import { currentUser } from "@/redux/features/auth/authSlice";
 import { useMounted } from "@/hooks/use-mounted";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +33,17 @@ const statusTabs: ("ALL" | EmailStatus)[] = [
 
 export default function InboundEmailsPage() {
     const isMounted = useMounted();
+    const router = useRouter();
+    const user = useAppSelector(currentUser);
+    const isUser = user?.role === "USER";
 
-    if (!isMounted) {
+    useEffect(() => {
+        if (isMounted && isUser) {
+            router.replace("/dashboard/replies");
+        }
+    }, [isMounted, isUser, router]);
+
+    if (!isMounted || isUser) {
         return (
             <div className="flex h-96 items-center justify-center">
                 <div className="size-6 animate-spin rounded-full border-2 border-ocean border-t-transparent" />

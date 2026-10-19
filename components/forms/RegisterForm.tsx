@@ -25,8 +25,10 @@ import {
   CheckCircle2,
   Camera,
   X,
+  UploadCloud,
 } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -36,6 +38,7 @@ export function RegisterForm() {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -56,16 +59,47 @@ export function RegisterForm() {
     },
   });
 
+  const processFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setServerError("Please select a valid image file (JPG or PNG).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setServerError("Image file size must be less than 5MB.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    if (serverError) setServerError(null);
+  };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setServerError("Image file size must be less than 5MB.");
-        return;
-      }
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-      if (serverError) setServerError(null);
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
     }
   };
 
@@ -106,19 +140,12 @@ export function RegisterForm() {
             token: response.data.accessToken,
           })
         );
-        setSuccessMessage("Account created successfully! Redirecting...");
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 900);
-      } else {
-        setSuccessMessage(
-          response?.message ||
-            "Registration successful! Please check your email to verify your account."
-        );
-        setTimeout(() => {
-          router.push("/login");
-        }, 1500);
       }
+
+      setSuccessMessage("Account created! Please enter the 6-digit verification code sent to your email.");
+      setTimeout(() => {
+        router.push(`/verify-otp?email=${encodeURIComponent(values.email.trim())}&type=email-verification`);
+      }, 900);
     } catch (err: unknown) {
       const errorObj = err as { data?: { message?: string }; message?: string };
       setServerError(
@@ -166,54 +193,83 @@ export function RegisterForm() {
         noValidate
         className="space-y-4"
       >
-        {/* Avatar Upload */}
-        <div className="flex items-center gap-4 p-3 rounded-xl bg-porcelain dark:bg-navy-dark border border-border">
-          <div className="relative group">
-            <div className="w-13 h-13 rounded-xl overflow-hidden bg-white dark:bg-navy border border-border flex items-center justify-center">
-              {avatarPreview ? (
+        {/* Avatar Upload - Round shape with Drag & Drop */}
+        <div className="flex flex-col items-center justify-center pt-1 pb-1">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                fileInputRef.current?.click();
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              "relative group size-24 rounded-full border-2 border-dashed transition-all duration-200 cursor-pointer flex items-center justify-center overflow-hidden select-none",
+              isDragging
+                ? "border-ocean bg-ocean/10 scale-105 ring-4 ring-ocean/20"
+                : avatarPreview
+                ? "border-border hover:border-ocean/60 shadow-xs"
+                : "border-border/80 bg-muted/30 hover:border-ocean/60 hover:bg-ocean/5"
+            )}
+            title={avatarPreview ? "Click or drag new image to replace" : "Click or drag photo here to upload"}
+          >
+            {avatarPreview ? (
+              <>
                 <Image
                   src={avatarPreview}
                   alt="Avatar preview"
                   fill
-                  className="object-cover"
+                  className="object-cover rounded-full"
                 />
-              ) : (
-                <User className="w-6 h-6 text-navy dark:text-mint" />
-              )}
-            </div>
+                {/* Hover overlay to change photo */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+                  <Camera className="size-5 mb-0.5" />
+                  <span className="text-[10px] font-semibold">Change</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+                <div className="size-8 rounded-full bg-ocean/10 flex items-center justify-center text-ocean mb-1 group-hover:scale-110 transition-transform">
+                  {isDragging ? (
+                    <UploadCloud className="size-4 animate-bounce" />
+                  ) : (
+                    <Camera className="size-4" />
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground group-hover:text-ocean transition-colors">
+                  {isDragging ? "Drop here" : "Upload photo"}
+                </span>
+              </div>
+            )}
 
             {avatarPreview && (
               <button
                 type="button"
-                onClick={removeAvatar}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center shadow hover:scale-105 transition-transform"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAvatar();
+                }}
+                className="absolute top-1 right-1 size-5 rounded-full bg-destructive text-white flex items-center justify-center shadow-xs hover:scale-110 transition-transform z-10"
                 title="Remove photo"
+                aria-label="Remove photo"
               >
-                <X className="w-3 h-3" />
+                <X className="size-3" />
               </button>
             )}
           </div>
 
-          <div className="flex-1 space-y-0.5">
-            <div className="text-xs font-semibold text-foreground">Profile Photo</div>
-            <div className="text-[11px] text-muted-foreground">Optional, JPG or PNG up to 5MB</div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              id="register-avatar-input"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-ocean hover:text-ocean-dark dark:text-mint cursor-pointer pt-0.5"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              {avatarPreview ? "Change photo" : "Upload photo"}
-            </button>
-          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="register-avatar-input"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
         </div>
 
         {/* Full Name */}

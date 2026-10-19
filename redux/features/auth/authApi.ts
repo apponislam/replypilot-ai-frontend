@@ -23,6 +23,11 @@ export interface VerifyEmailParams {
     otp?: string;
 }
 
+export interface CheckEmailVerifiedResponseData {
+    email: string;
+    isEmailVerified: boolean;
+}
+
 export interface ResendVerificationRequest {
     email: string;
 }
@@ -197,7 +202,7 @@ export const authApi = baseApi.injectEndpoints({
             providesTags: ["User"],
         }),
         // 10.5. Check if email is verified
-        checkEmailVerified: builder.query<ApiResponse<null>, void>({
+        checkEmailVerified: builder.query<ApiResponse<CheckEmailVerifiedResponseData>, void>({
             query: () => ({
                 url: "/auth/check-email-verified",
                 method: "GET",

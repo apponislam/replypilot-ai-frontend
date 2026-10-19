@@ -18,15 +18,8 @@ export function ProtectedRouteProvider({ children }: { children: React.ReactNode
         }
     }, [isMounted, user, router]);
 
-    if (!isMounted) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-ocean border-t-transparent" />
-            </div>
-        );
-    }
-
-    if (!user) {
+    // Keep children in the tree while checking auth so Next.js prerender validation is satisfied
+    if (!isMounted || !user) {
         return (
             <div className="relative">
                 <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-gray-50/80 dark:bg-zinc-950/80 backdrop-blur-xs">

@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, RefreshCw, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetEmailWithRepliesQuery } from "@/redux/features/email/emailApi";
+import { useAppSelector } from "@/redux/hooks";
+import { currentUser } from "@/redux/features/auth/authSlice";
 import { useMounted } from "@/hooks/use-mounted";
 import { EmailDetailHeader } from "@/components/dashboard/emails/email-detail-header";
 import { EmailInquiryCard } from "@/components/dashboard/emails/email-inquiry-card";
@@ -14,8 +16,17 @@ import { EmailReplyComposer } from "@/components/dashboard/emails/email-reply-co
 
 export default function EmailDetailPage() {
     const isMounted = useMounted();
+    const router = useRouter();
+    const user = useAppSelector(currentUser);
+    const isUser = user?.role === "USER";
 
-    if (!isMounted) {
+    useEffect(() => {
+        if (isMounted && isUser) {
+            router.replace("/dashboard/replies");
+        }
+    }, [isMounted, isUser, router]);
+
+    if (!isMounted || isUser) {
         return (
             <div className="flex h-96 items-center justify-center">
                 <div className="size-6 animate-spin rounded-full border-2 border-ocean border-t-transparent" />

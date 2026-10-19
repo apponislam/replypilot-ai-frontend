@@ -38,7 +38,7 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
     const url = typeof args === "string" ? args : args.url;
     const isAuthEndpoint = url?.includes("/auth/login") || url?.includes("/auth/refresh-token");
 
-    if ((result?.error?.status === 401 || result?.error?.status === 403) && !isAuthEndpoint) {
+    if (result?.error?.status === 401 && !isAuthEndpoint) {
         const refreshResult = await baseQuery({ url: "/auth/refresh-token", method: "POST", credentials: "include" }, api, extraOptions);
 
         if (refreshResult.data && typeof refreshResult.data === "object" && "data" in refreshResult.data) {
@@ -77,6 +77,6 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
 export const baseApi = createApi({
     reducerPath: "api",
     baseQuery: baseQueryWithReauth,
-    tagTypes: ["User", "Admin", "Email", "Setting", "UserReply"],
+    tagTypes: ["User", "Admin", "Email", "Setting", "UserReply", "Dashboard"],
     endpoints: () => ({}),
 });
