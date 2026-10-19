@@ -2,7 +2,7 @@ import { baseApi } from "../../api/baseApi";
 import type { ApiResponse } from "../auth/authSlice";
 
 export type EmailType = "INBOUND" | "OUTBOUND";
-export type EmailStatus = "UNREAD" | "READ" | "REPLIED" | "SENT" | "ARCHIVED";
+export type EmailStatus = "UNREAD" | "READ" | "REPLIED" | "AUTO_REPLIED" | "SENT" | "ARCHIVED";
 
 export interface IEmailAttachment {
     id?: string;
